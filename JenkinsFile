@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+    JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+    PATH = "${JAVA_HOME}/bin:${PATH}"
+    }
+
     tools {
         maven 'Maven 3.8.4'
         jdk 'JDK 17'
@@ -9,37 +14,31 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                bat 'echo Checkout stage passed'
+                bat 'echo passed'
             }
         }
 
-        stage('Build and Test') {
-            steps {
-                bat 'echo ===== RUN BUILD ====='
-                bat 'mvn clean compile'
-
-                bat 'echo ===== RUN TESTS ====='
-                bat 'mvn test'
-
-                bat 'echo ===== LIST TARGET ====='
-                bat 'dir target'
-            }
+    stage('Build and Test') {
+    environment {
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        M2_HOME = '/usr/share/maven'
+        PATH = "${JAVA_HOME}/bin:${M2_HOME}/bin:${PATH}"
+    }
+    steps {
+        bat 'mvn -version'
+        bat 'mvn clean compile'
+        bat 'mvn test'
+        bat 'mvn package -DskipTests'
+    }
+    post {
+        always {
+            // Publish test results
+            junit 'target/surefire-reports/TEST-*.xml'
+            // Publish JaCoCo code coverage report
+            publishCoverage adapters: [jacocoAdapter('target/site/jacoco/jacoco.xml')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
         }
-
-        stage('Check Reports') {
-            steps {
-                bat '''
-                    echo ===== LIST TARGET DIRECTORY =====
-                    dir target
-
-                    echo ===== LIST SUREFIRE REPORTS =====
-                    dir target\\surefire-reports
-
-                    echo ===== LIST JACOCO REPORT =====
-                    dir target\\site\\jacoco
-                '''
-            }
-        }
+    }
+}
 
         stage('Static Code Analysis') {
             environment {
@@ -47,7 +46,7 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-                    bat "mvn sonar:sonar -Dsonar.login=%SONAR_AUTH_TOKEN% -Dsonar.host.url=%SONAR_URL%"
+                    bat 'mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
                 }
             }
         }
@@ -55,12 +54,15 @@ pipeline {
         stage('Build and Push Docker Image') {
             environment {
                 DOCKER_IMAGE = "lishan2023/currency-converter:${BUILD_NUMBER}"
+                REGISTRY_CREDENTIALS = credentials('docker-cred')
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-cred', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                    bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
-                    bat "docker build -t ${DOCKER_IMAGE} ."
-                    bat "docker push ${DOCKER_IMAGE}"
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-cred', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        bat "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        bat "docker build -t ${DOCKER_IMAGE} ."
+                        bat "docker push ${DOCKER_IMAGE}"
+                    }
                 }
             }
         }
@@ -81,11 +83,11 @@ pipeline {
                     bat '''
                         git config user.email "Bhaktathapamgr5@gmail.com"
                         git config user.name "Bhaktabahadurthapa"
-                        set BUILD_NUMBER=${BUILD_NUMBER}
-                        powershell -Command "(Get-Content deployment.yml) -replace 'replaceImageTag', '${BUILD_NUMBER}' | Set-Content deployment.yml"
+                        BUILD_NUMBER=${BUILD_NUMBER}
+                        sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" deployment.yml
                         git add deployment.yml
                         git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                        git push https://%GITHUB_TOKEN%@github.com/%GIT_USER_NAME%/%GIT_REPO_NAME% HEAD:main
+                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                     '''
                 }
             }
