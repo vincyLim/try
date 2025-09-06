@@ -32,11 +32,11 @@ pipeline {
     }
     post {
         always {
-            bat 'dir target\\site\\jacoco\\jacoco.xml 2>nul || echo jacoco.xml not found'
             // Publish test results
             junit 'target/surefire-reports/TEST-*.xml'
             // Publish JaCoCo code coverage report
             publishCoverage adapters: [jacocoAdapter('target/site/jacoco/jacoco.xml')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+            bat 'dir target\\site\\jacoco\\jacoco.xml 2>nul || echo jacoco.xml not found'
         }
     }
 }
