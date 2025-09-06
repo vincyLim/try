@@ -34,16 +34,26 @@ pipeline {
         always {
             // Publish test results
             junit 'target/surefire-reports/TEST-*.xml'
-                // Publish JaCoCo HTML code coverage report
-                publishHTML([
-                    reportDir: 'target/site/jacoco',
-                    reportFiles: 'index.html',
-                    reportName: 'JaCoCo Coverage',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: false
-                ])
-                bat 'dir target\\site\\jacoco\\index.html 2>nul || echo JaCoCo HTML report not found'
+            // Publish JaCoCo HTML code coverage report
+            // publishHTML([
+            //     reportDir: 'target/site/jacoco',
+            //     reportFiles: 'index.html',
+            //     reportName: 'JaCoCo Coverage',
+            //     keepAll: true,
+            //     alwaysLinkToLastBuild: true,
+            //     allowMissing: false
+            // ])
+                // Publish JaCoCo XML coverage and set quality gates
+                recordCoverage(
+                    tools: [[parser: 'JACOCO', pattern: 'target/site/jacoco/jacoco.xml']],
+                    id: 'jacoco',
+                    name: 'JaCoCo Coverage',
+                    sourceCodeRetention: 'EVERY_BUILD',
+                    qualityGates: [
+                        [threshold: 60.0, metric: 'LINE', baseline: 'PROJECT', unstable: true],
+                        [threshold: 60.0, metric: 'BRANCH', baseline: 'PROJECT', unstable: true]
+                    ]
+                )
         }
     }
 }
