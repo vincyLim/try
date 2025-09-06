@@ -19,6 +19,8 @@ pipeline {
                     mvn -version
                     mvn clean compile
                     mvn test
+                    echo ===== LIST TEST CLASSES =====
+            dir src\\test\\java /s
                     dir target
                     dir target\\surefire-reports
                     mvn package -DskipTests
