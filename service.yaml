@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: calculator-app
+  labels:
+    app: calculator-app
+spec:
+  type: LoadBalancer  # Change this from LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http    # Keep the named port
+  selector:
+    app: calculator-app
