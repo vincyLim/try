@@ -34,9 +34,16 @@ pipeline {
         always {
             // Publish test results
             junit 'target/surefire-reports/TEST-*.xml'
-            // Publish JaCoCo code coverage report
-            publishCoverage adapters: [jacocoAdapter('target/site/jacoco/jacoco.xml')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
-            bat 'dir target\\site\\jacoco\\jacoco.xml 2>nul || echo jacoco.xml not found'
+                // Publish JaCoCo HTML code coverage report
+                publishHTML([
+                    reportDir: 'target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: 'JaCoCo Coverage',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: false
+                ])
+                bat 'dir target\\site\\jacoco\\index.html 2>nul || echo JaCoCo HTML report not found'
         }
     }
 }
