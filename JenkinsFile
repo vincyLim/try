@@ -32,6 +32,20 @@ pipeline {
             mvn package -DskipTests
         '''
     }
+    stage('Check Reports') {
+            steps {
+                bat '''
+                    echo ===== LIST TARGET DIRECTORY =====
+                    dir target
+                    
+                    echo ===== LIST SUREFIRE REPORTS =====
+                    dir target\\surefire-reports
+                    
+                    echo ===== LIST JACOCO REPORT =====
+                    dir target\\site\\jacoco
+                '''
+            }
+        }
     post {
         always {
             // Publish test results
