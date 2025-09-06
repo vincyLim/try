@@ -15,7 +15,7 @@ pipeline {
 
         stage('Build and Test') {
             steps {
-                bat '''
+                bat """
                     mvn -version
                     echo ===== RUN BUILD =====
                     mvn clean compile
@@ -26,7 +26,7 @@ pipeline {
                     dir target
                     dir target\\surefire-reports
                     mvn package -DskipTests
-                '''
+                """
             }
         }
 
