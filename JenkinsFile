@@ -17,10 +17,12 @@ pipeline {
             steps {
                 bat '''
                     mvn -version
+                    echo ===== RUN BUILD =====
                     mvn clean compile
+                    echo =====RUN TESTS =====
                     mvn test
                     echo ===== LIST TEST CLASSES =====
-            dir src\\test\\java /s
+                    dir src\\test\\java /s
                     dir target
                     dir target\\surefire-reports
                     mvn package -DskipTests
