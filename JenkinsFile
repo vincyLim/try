@@ -19,6 +19,8 @@ pipeline {
                     mvn -version
                     mvn clean compile
                     mvn test
+                    dir target
+                    dir target\\surefire-reports
                     mvn package -DskipTests
                 '''
             }
